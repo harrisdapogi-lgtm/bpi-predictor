@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: bpi-dashboard
+    env: python
+    plan: starter
+    buildCommand: ""
+    startCommand: "python app.py"
+
+  - type: cron
+    name: bpi-daily-predictor
+    env: python
+    plan: starter
+    schedule: "0 1 * * *"
+    buildCommand: ""
+    startCommand: "python bpi_predictor.py"
