@@ -2,13 +2,12 @@ name: Daily BPI Predictor
 
 on:
   schedule:
-    - cron: "0 1 * * *"  # Runs every day at 1 AM UTC
-  workflow_dispatch:  # Allows manual run from Actions tab
+    - cron: "0 1 * * *"  # every day at 1 AM UTC
+  workflow_dispatch:  # allows manual trigger
 
 jobs:
   run:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -31,4 +30,3 @@ jobs:
           git add logs/
           git commit -m "Daily update: $(date)" || echo "No changes"
           git push
-
