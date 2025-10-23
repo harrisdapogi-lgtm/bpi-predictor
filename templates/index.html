@@ -1,1 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>BPI 5-Day Prediction Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial; background:#f4f6f9; padding:30px; }
+    canvas { background:#fff; border-radius:10px; margin-bottom:30px; padding:20px; box-shadow:0 0 10px rgba(0,0,0,0.1);}
+  </style>
+</head>
+<body>
+  <h2>📈 BPI 5-Day Forecast vs Actual</h2>
+  <canvas id="priceChart" width="900" height="400"></canvas>
 
+  <h2>📊 Model Accuracy (MAPE %)</h2>
+  <canvas id="mapeChart" width="900" height="300"></canvas>
+
+  <script>
+    async function loadCharts() {
+      const res1 = await fetch('/data');
+      const data = await res1.json();
+      const res2 = await fetch('/metrics');
+      const metrics = await res2.json();
+
+      const labels = data.map(d => d.Date);
+      const pred = data.map(d => d.Predicted);
+      const actual = data.map(d => d.Actual);
+
+      new Chart(document.getElementById('priceChart'), {
+        type:'line',
+        data:{
+          labels:labels,
+          datasets:[
+            {label:'Predicted ₱', data:pred, borderColor:'#007bff', fill:false, tension:0.3},
+            {label:'Actual ₱', data:actual, borderColor:'#28a745', fill:false, tension:0.3}
+          ]
+        }
+      });
+
+      const mlabels = metrics.map(m => m.Date);
+      const mape = metrics.map(m => m.MAPE);
+      new Chart(document.getElementById('mapeChart'), {
+        type:'bar',
+        data:{ labels:mlabels, datasets:[{ label:'MAPE (%)', data:mape, backgroundColor:'#ffc107'}]},
+        options:{ scales:{ y:{ beginAtZero:true }}}
+      });
+    }
+    loadCharts();
+  </script>
+</body>
+</html>
