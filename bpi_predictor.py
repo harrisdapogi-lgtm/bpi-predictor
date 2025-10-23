@@ -11,8 +11,43 @@ from tensorflow.keras.optimizers import Adam
 import datetime
 import os
 
-def download_data(ticker, start, end):
-    return yf.download(ticker, start=start, end=end)
+# def download_data(ticker, start, end):
+#    return yf.download(ticker, start=start, end=end)
+
+data = fetch_bpi_data()
+print(f"Fetched {len(data)} daily rows from Alpha Vantage")
+
+import os
+import requests
+import pandas as pd
+
+# ------------------------------------------------------------------
+# Fetch BPI data from Alpha Vantage
+# ------------------------------------------------------------------
+def fetch_bpi_data():
+    api_key = os.getenv("ALPHAVANTAGE_API_KEY")
+    if not api_key:
+        raise ValueError("ALPHAVANTAGE_API_KEY not set. Add it as a GitHub secret.")
+
+    symbol = "BPI.PSE"        # BPI on the Philippine Stock Exchange
+    url = (
+        "https://www.alphavantage.co/query?"
+        f"function=TIME_SERIES_DAILY_ADJUSTED&symbol={symbol}"
+        f"&outputsize=full&apikey={api_key}"
+    )
+
+    print("Fetching BPI data from Alpha Vantage…")
+    r = requests.get(url, timeout=30)
+    data = r.json().get("Time Series (Daily)", {})
+    if not data:
+        raise ValueError(f"No data returned from Alpha Vantage: {r.text[:200]}")
+
+    df = pd.DataFrame.from_dict(data, orient="index")
+    df = df.astype(float)
+    df.index = pd.to_datetime(df.index)
+    df.sort_index(inplace=True)
+    df.rename(columns={"5. adjusted close": "Adj Close"}, inplace=True)
+    return df
 
 def add_indicators(df):
     df['MA20'] = df['Close'].rolling(20).mean()
@@ -124,3 +159,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
