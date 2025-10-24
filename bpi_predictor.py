@@ -1,6 +1,6 @@
 """
-BPI Stock Predictor – Alpha Vantage Edition with Auto-Retry
-Predicts next 5 days of BPI.PSE closing prices
+BDO Stock Predictor – Alpha Vantage Edition with Auto-Retry
+Predicts next 5 days of BDO.PSE closing prices
 """
 
 import os
@@ -18,9 +18,9 @@ warnings.filterwarnings("ignore")
 
 
 # -------------------------------------------------------------------
-# Fetch BPI data from Alpha Vantage with retry & rate-limit handling
+# Fetch BDO data from Alpha Vantage with retry & rate-limit handling
 # -------------------------------------------------------------------
-def fetch_bpi_data(max_retries=5):
+def fetch_BDO_data(max_retries=5):
     api_key = os.getenv("ALPHAVANTAGE_API_KEY")
     if not api_key:
         raise ValueError("❌ ALPHAVANTAGE_API_KEY not found. Add it as a GitHub secret.")
@@ -33,7 +33,7 @@ def fetch_bpi_data(max_retries=5):
     )
 
     for attempt in range(1, max_retries + 1):
-        print(f"📡 Attempt {attempt}/{max_retries} fetching BPI data…")
+        print(f"📡 Attempt {attempt}/{max_retries} fetching BDO data…")
         try:
             r = requests.get(url, timeout=30)
             if r.status_code != 200:
@@ -106,10 +106,10 @@ def build_model(input_shape, horizon):
 # Main pipeline
 # -------------------------------------------------------------------
 def main():
-    print("🚀 Starting BPI Predictor run at", datetime.utcnow())
+    print("🚀 Starting BDO Predictor run at", datetime.utcnow())
 
     # Fetch data with retry
-    data = fetch_bpi_data()
+    data = fetch_BDO_data()
     if data is None or len(data) < 50:
         raise ValueError("❌ Not enough data retrieved to train the model.")
 
@@ -150,6 +150,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
