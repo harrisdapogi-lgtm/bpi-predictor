@@ -25,9 +25,6 @@ jobs:
         ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
         run: python bpi_predictor.py
   
-#      - name: Run daily predictor
-#        run: python bpi_predictor.py
-
       - name: Commit & push logs
         run: |
           git config user.name "github-actions"
