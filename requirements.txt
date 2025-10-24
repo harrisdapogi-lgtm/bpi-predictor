@@ -1,6 +1,6 @@
 Flask
-yfinance
-numpy
+tensorflow==2.17.0
 pandas
+numpy
 scikit-learn
-tensorflow
+requests
