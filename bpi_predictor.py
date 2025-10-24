@@ -25,7 +25,7 @@ def fetch_bpi_data(max_retries=5):
     if not api_key:
         raise ValueError("❌ ALPHAVANTAGE_API_KEY not found. Add it as a GitHub secret.")
 
-    symbol = "BPI.PSE"  # Bank of the Philippine Islands (PSE)
+    symbol = "BDOUY"  # Bank of the Philippine Islands (PSE)
     url = (
         "https://www.alphavantage.co/query?"
         f"function=TIME_SERIES_DAILY_ADJUSTED&symbol={symbol}"
@@ -150,5 +150,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
