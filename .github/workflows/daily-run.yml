@@ -2,12 +2,13 @@ name: Daily BPI Predictor
 
 on:
   schedule:
-    - cron: "0 1 * * *"  # every day at 1 AM UTC
-  workflow_dispatch:  # allows manual trigger
+    - cron: "0 1 * * *"  # Runs every day at 1 AM UTC
+  workflow_dispatch:  # Allows manual trigger
 
 jobs:
   run:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -18,14 +19,18 @@ jobs:
           python-version: "3.10"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Run daily predictor
         env:
-        ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
+          ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
         run: python bpi_predictor.py
-  
+
       - name: Commit & push logs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
