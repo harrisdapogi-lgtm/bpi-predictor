@@ -1,61 +1,139 @@
-# 📊 BPI Stock Predictor Visualization + Accuracy Metrics
-# Run this notebook after you have several logs/prediction_*.csv files.
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import glob
 import os
-from sklearn.metrics import mean_absolute_error, mean_squared_error
-import numpy as np
+from datetime import datetime
 
-# --- 1️⃣ Load all daily prediction CSVs ---
-log_files = sorted(glob.glob("logs/prediction_*.csv"))
-if not log_files:
-    raise FileNotFoundError("No prediction CSVs found in logs/ — run the workflow first!")
+# === Setup ===
+log_dir = "logs"
+output_dir = "analysis"
+os.makedirs(output_dir, exist_ok=True)
+
+# === Load predictions ===
+files = sorted(glob.glob(os.path.join(log_dir, "prediction_*.csv")))
+if not files:
+    raise ValueError("No prediction files found in logs/")
 
 dfs = []
-for f in log_files:
-    df = pd.read_csv(f, parse_dates=["Date"])
-    df["Source"] = os.path.basename(f)
+for f in files:
+    df = pd.read_csv(f)
+    df["source_file"] = os.path.basename(f)
     dfs.append(df)
 
-pred_all = pd.concat(dfs, ignore_index=True).sort_values("Date")
-print(f"Loaded {len(log_files)} prediction files, {len(pred_all)} total rows")
+data = pd.concat(dfs)
+data["Date"] = pd.to_datetime(data["Date"])
+data = data.sort_values("Date")
 
-# --- 2️⃣ Load actual BPI data (same CSV used in training) ---
-actual = pd.read_csv("data/bpi_stock.csv", parse_dates=["Date"])
-actual = actual.rename(columns={"Close": "Actual_Close"})
-actual = actual[["Date", "Actual_Close"]]
-
-# --- 3️⃣ Merge actual & predicted ---
-merged = pd.merge(actual, pred_all, on="Date", how="inner").sort_values("Date")
-
-# --- 4️⃣ Calculate metrics (MAE, RMSE) ---
-merged_clean = merged.dropna(subset=["Actual_Close", "Predicted_Close"])
-if len(merged_clean) > 0:
-    mae = mean_absolute_error(merged_clean["Actual_Close"], merged_clean["Predicted_Close"])
-    rmse = np.sqrt(mean_squared_error(merged_clean["Actual_Close"], merged_clean["Predicted_Close"]))
-    print(f"\n📈 Accuracy Metrics (based on overlapping dates):")
-    print(f"   Mean Absolute Error (MAE):  {mae:.4f}")
-    print(f"   Root Mean Squared Error (RMSE): {rmse:.4f}")
-else:
-    print("⚠️ Not enough overlapping dates to compute metrics yet.")
-
-# --- 5️⃣ Plot Actual vs Predicted ---
-plt.figure(figsize=(12,6))
-plt.plot(merged["Date"], merged["Actual_Close"], label="Actual Close", color="blue")
-plt.plot(merged["Date"], merged["Predicted_Close"], label="Predicted (5-day forecast)", color="red", linestyle="--")
-
-plt.title("BPI Stock Price — Actual vs Predicted")
+# === Plot Actual vs Predicted ===
+plt.figure(figsize=(10, 5))
+plt.plot(data["Date"], data["Actual"], label="Actual", linewidth=2)
+plt.plot(data["Date"], data["Predicted"], label="Predicted", linestyle="--", alpha=0.7)
+plt.title("📊 BPI Stock — Actual vs Predicted")
 plt.xlabel("Date")
-plt.ylabel("Price (PHP)")
+plt.ylabel("Closing Price (PHP)")
 plt.legend()
 plt.grid(True)
-plt.tight_layout()
-plt.show()
 
-# --- 6️⃣ Optional: Save chart for records ---
-os.makedirs("charts", exist_ok=True)
-chart_path = f"charts/actual_vs_predicted_latest.png"
-plt.savefig(chart_path, dpi=150)
-print(f"\n🖼️ Chart saved to {chart_path}")
+timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+plot_path = os.path.join(output_dir, "bpi_plot.png")
+plt.savefig(plot_path, bbox_inches="tight")
+
+# === Summary stats ===
+mae = abs(data["Actual"] - data["Predicted"]).mean()
+mape = (abs(data["Actual"] - data["Predicted"]) / data["Actual"]).mean() * 100
+
+# === HTML Table (last 10 days) ===
+latest = data.tail(10).copy()
+latest_html = latest[["Date", "Actual", "Predicted"]].to_html(
+    index=False,
+    classes="data-table",
+    border=0,
+    justify="center",
+    float_format="%.2f"
+)
+
+# === HTML Dashboard ===
+html_path = os.path.join(output_dir, "index.html")
+html_content = f"""
+<html>
+<head>
+  <title>BPI Predictor Dashboard</title>
+  <meta http-equiv="refresh" content="86400">
+  <style>
+    body {{
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f9fafb;
+      color: #1f2937;
+      text-align: center;
+      margin: 40px;
+    }}
+    h1 {{
+      color: #111827;
+    }}
+    .stats {{
+      margin: 20px auto;
+      background: #ffffff;
+      display: inline-block;
+      padding: 15px 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      font-size: 16px;
+    }}
+    img {{
+      border-radius: 12px;
+      margin: 20px auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }}
+    .data-table {{
+      margin: 0 auto;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }}
+    .data-table th {{
+      background: #2563eb;
+      color: white;
+      padding: 10px;
+    }}
+    .data-table td {{
+      padding: 8px 12px;
+      border-bottom: 1px solid #e5e7eb;
+    }}
+    .footer {{
+      margin-top: 30px;
+      font-size: 14px;
+      color: #6b7280;
+    }}
+  </style>
+</head>
+<body>
+  <h1>📈 BPI Stock Prediction Dashboard</h1>
+  <p>Last updated: {timestamp}</p>
+
+  <div class="stats">
+    <strong>MAE:</strong> {mae:.2f} PHP |
+    <strong>MAPE:</strong> {mape:.2f}% |
+    <strong>Records:</strong> {len(data)}
+  </div>
+
+  <div>
+    <img src="bpi_plot.png" width="800">
+  </div>
+
+  <h2>📅 Last 10 Records</h2>
+  {latest_html}
+
+  <div class="footer">
+    Generated automatically via GitHub Actions<br>
+    Repository: <a href="https://github.com/harrisdapogi-lgtm/bpi-predictor">bpi-predictor</a>
+  </div>
+</body>
+</html>
+"""
+
+with open(html_path, "w", encoding="utf-8") as f:
+    f.write(html_content)
+
+print(f"✅ Dashboard saved to: {html_path}")
