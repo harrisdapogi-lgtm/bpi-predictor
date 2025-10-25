@@ -78,7 +78,7 @@ def main():
     future_dates = [data.index[-1] + timedelta(days=i+1) for i in range(horizon)]
     forecast_df = pd.DataFrame({
         "Date": future_dates,
-        "Predicted_Close": predicted
+        "Predicted": predicted
     })
 
     os.makedirs("logs", exist_ok=True)
@@ -89,3 +89,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
