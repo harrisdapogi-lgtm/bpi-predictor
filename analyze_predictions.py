@@ -4,15 +4,15 @@ import glob
 import os
 from datetime import datetime
 
-# === Paths ===
+# === Setup ===
 log_dir = "logs"
 output_dir = "analysis"
 os.makedirs(output_dir, exist_ok=True)
 
 # === Load predictions ===
 files = sorted(glob.glob(os.path.join(log_dir, "prediction_*.csv")))
-if len(files) < 1:
-    raise ValueError("No prediction files found!")
+if not files:
+    raise ValueError("No prediction files found in logs/")
 
 dfs = []
 for f in files:
@@ -34,18 +34,28 @@ plt.ylabel("Closing Price (PHP)")
 plt.legend()
 plt.grid(True)
 
-# Save HTML report with embedded plot
-timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M")
-html_path = os.path.join(output_dir, f"bpi_comparison_{timestamp}.html")
-plt.savefig("temp_plot.png", bbox_inches="tight")
+timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+plot_path = os.path.join(output_dir, "bpi_plot.png")
+plt.savefig(plot_path, bbox_inches="tight")
 
+# === HTML Report ===
+html_path = os.path.join(output_dir, "index.html")
 html_content = f"""
 <html>
-<head><title>BPI Actual vs Predicted ({timestamp})</title></head>
+<head>
+<title>BPI Predictor Dashboard</title>
+<meta http-equiv="refresh" content="86400">
+<style>
+body {{ font-family: Arial; background: #fafafa; text-align:center; }}
+h1 {{ color: #1f2937; }}
+img {{ border-radius: 12px; margin: 20px auto; }}
+</style>
+</head>
 <body>
-<h2>📈 BPI Stock Actual vs Predicted — {timestamp}</h2>
-<img src="../temp_plot.png" width="800"><br>
-<p>Total Records: {len(data)}</p>
+<h1>📈 BPI Stock Prediction Dashboard</h1>
+<p>Last updated: {timestamp}</p>
+<img src="bpi_plot.png" width="800">
+<p>Data from {len(data)} rows | Generated automatically via GitHub Actions</p>
 </body>
 </html>
 """
@@ -53,6 +63,4 @@ html_content = f"""
 with open(html_path, "w") as f:
     f.write(html_content)
 
-os.remove("temp_plot.png")
-
-print(f"✅ Report saved to: {html_path}")
+print(f"✅ Dashboard saved to: {html_path}")
